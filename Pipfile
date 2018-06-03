@@ -17,6 +17,7 @@ uwsgi = "*"
 [dev-packages]
 
 pytest = "*"
+"flake8" = "*"
 
 
 [requires]
