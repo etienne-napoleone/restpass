@@ -28,4 +28,7 @@ def set_id(name, value) -> dict:
 
 
 def delete_id(name) -> dict:
-    return _r.delete(config.REDIS_PREFIX+name)
+    if _r.delete(config.REDIS_PREFIX+name) == 1:
+        return True
+    else:
+        return False

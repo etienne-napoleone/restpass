@@ -30,8 +30,8 @@ def test_get_absent_id():
 
 # TODO
 def test_create_id():
-    response = client.post('/test_id')
-    assert response.status_code == 404
+    response = client.post('/ids/test_id')
+    assert response.status_code == 405
     assert(not redisclient.get_id('test_id'))
     redisclient.delete_id('test_id')
 
@@ -40,7 +40,7 @@ def test_create_id():
 def test_update_existing_id():
     redisclient.set_id('test_id', json.dumps(id))
     response = client.put('/ids/test_id'+password_slug)
-    assert response.status_code == 404
+    assert response.status_code == 405
     redisclient.delete_id('test_id')
 
 # # TODO
@@ -52,8 +52,13 @@ def test_update_existing_id():
 
 
 # TODO
-def test_delete_id():
+def test_delete_existing_id():
     redisclient.set_id('test_id', json.dumps(id))
     response = client.delete('/ids/test_id')
+    assert response.status_code == 200
+    assert response.json() == {'deleted': 'test_id'}
+
+
+def test_delete_absent_id():
+    response = client.delete('/ids/test_id')
     assert response.status_code == 404
-    redisclient.delete_id('test_id')

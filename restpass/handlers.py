@@ -27,12 +27,17 @@ def get_id(name: str) -> dict:
 
 
 def create_id(name: str) -> dict:
-    raise exceptions.NotFound()
+    raise exceptions.MethodNotAllowed()
 
 
 def update_id(name: str) -> dict:
-    raise exceptions.NotFound()
+    raise exceptions.MethodNotAllowed()
 
 
 def delete_id(name: str) -> dict:
-    raise exceptions.NotFound()
+    value = redisclient.get_id(name)
+    if value is None:
+        raise exceptions.NotFound()
+    if not redisclient.delete_id(name):
+        raise exceptions.HTTPException('Internal Server Error', 500)
+    return {'deleted': name}
