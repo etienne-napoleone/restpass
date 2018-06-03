@@ -4,7 +4,7 @@ from app import app
 from restpass import redisclient
 
 client = test.TestClient(app)
-id = {'login': 'supermail@test.com', 'password': '12345'}
+test_id = {'login': 'supermail@test.com', 'password': '12345'}
 password_slug = '?pw=password123'
 
 
@@ -15,31 +15,42 @@ def test_get_ids_list():
 
 
 def test_get_existing_id():
-    redisclient.set_id('test_id', json.dumps(id))
-    response = client.get('/ids/test_id'+password_slug)
+    redisclient.set_id('test_id', json.dumps(test_id))
+    response = client.get('/ids/test_id' + password_slug)
     assert response.status_code == 200
-    assert response.json() == json.loads(json.dumps(id))
+    assert response.json() == json.loads(json.dumps(test_id))
     redisclient.delete_id('test_id')
 
 
 def test_get_absent_id():
     redisclient.delete_id('test_id')
-    response = client.get('/ids/test_id'+password_slug)
+    response = client.get('/ids/test_id' + password_slug)
     assert response.status_code == 404
 
 
-# TODO
-def test_create_id():
-    response = client.post('/ids/test_id')
-    assert response.status_code == 405
-    assert(not redisclient.get_id('test_id'))
+def test_create_existing_id():
+    redisclient.set_id('test_id', json.dumps(test_id))
+    response = client.post('/ids/test_id' + password_slug +
+                           '&login={}'.format(test_id['login']) +
+                           '&password={}'.format(test_id['password']))
+    assert response.status_code == 500
+    redisclient.delete_id('test_id')
+
+
+def test_create_absent_id():
+    response = client.post('/ids/test_id' + password_slug +
+                           '&login={}'.format(test_id['login']) +
+                           '&password={}'.format(test_id['password']))
+    assert response.status_code == 200
+    assert(redisclient.get_id('test_id'))
+    assert response.json() == {'created': 'test_id'}
     redisclient.delete_id('test_id')
 
 
 # TODO
 def test_update_existing_id():
-    redisclient.set_id('test_id', json.dumps(id))
-    response = client.put('/ids/test_id'+password_slug)
+    redisclient.set_id('test_id', json.dumps(test_id))
+    response = client.put('/ids/test_id' + password_slug)
     assert response.status_code == 405
     redisclient.delete_id('test_id')
 
@@ -51,14 +62,13 @@ def test_update_existing_id():
 #     r.delete('test_id')
 
 
-# TODO
 def test_delete_existing_id():
-    redisclient.set_id('test_id', json.dumps(id))
-    response = client.delete('/ids/test_id')
+    redisclient.set_id('test_id', json.dumps(test_id))
+    response = client.delete('/ids/test_id' + password_slug)
     assert response.status_code == 200
     assert response.json() == {'deleted': 'test_id'}
 
 
 def test_delete_absent_id():
-    response = client.delete('/ids/test_id')
+    response = client.delete('/ids/test_id' + password_slug)
     assert response.status_code == 404

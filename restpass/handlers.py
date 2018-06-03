@@ -9,7 +9,7 @@ from restpass import config
 def welcome(name=None):
     if name is None:
         return {'message': 'Welcome to API Star!'}
-    return {'message': 'Welcome to API Star, {}!'.format(name)}
+    return {'message': 'Welcome to restpass, {}!'.format(name)}
 
 
 def list_ids(pw: http.QueryParam) -> dict:
@@ -19,15 +19,27 @@ def list_ids(pw: http.QueryParam) -> dict:
 
 
 def get_id(name: str) -> dict:
-    value = redisclient.get_id(name)
-    if value is None:
+    id = redisclient.get_id(name)
+    if id is None:
         raise exceptions.NotFound()
     else:
-        return json.loads(value)
+        return json.loads(id)
 
 
-def create_id(name: str) -> dict:
-    raise exceptions.MethodNotAllowed()
+def create_id(name: str, login: str, password: str) -> dict:
+    id = redisclient.get_id(name)
+    if id:
+        raise exceptions.HTTPException('The identity {} already exists'
+                                       .format(name),
+                                       500)
+    id = redisclient.set_id(name,
+                            json.dumps({'login': login, 'password': password}))
+    if not id:
+        raise exceptions.HTTPException('Internal error while creating ' +
+                                       'identity {}'
+                                       .format(name),
+                                       500)
+    return {'created': name}
 
 
 def update_id(name: str) -> dict:
@@ -39,5 +51,8 @@ def delete_id(name: str) -> dict:
     if value is None:
         raise exceptions.NotFound()
     if not redisclient.delete_id(name):
-        raise exceptions.HTTPException('Internal Server Error', 500)
+        raise exceptions.HTTPException('Internal error while deleting ' +
+                                       'identity {}'
+                                       .format(name),
+                                       500)
     return {'deleted': name}
