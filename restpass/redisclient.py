@@ -23,10 +23,6 @@ def set_id(name, value) -> dict:
     return _r.set(config.REDIS_PREFIX+name, value)
 
 
-# def update_id(name, value) -> dict:
-#     return _r.get(config.REDIS_PREFIX+name, value)
-
-
 def delete_id(name) -> dict:
     if _r.delete(config.REDIS_PREFIX+name) == 1:
         return True

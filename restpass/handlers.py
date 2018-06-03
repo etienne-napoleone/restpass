@@ -19,22 +19,21 @@ def list_ids(pw: http.QueryParam) -> dict:
 
 
 def get_id(name: str) -> dict:
-    id = redisclient.get_id(name)
-    if id is None:
+    response = redisclient.get_id(name)
+    if response is None:
         raise exceptions.NotFound()
     else:
-        return json.loads(id)
+        return json.loads(response)
 
 
 def create_id(name: str, login: str, password: str) -> dict:
-    id = redisclient.get_id(name)
-    if id:
+    if redisclient.get_id(name):
         raise exceptions.HTTPException('The identity {} already exists'
                                        .format(name),
                                        500)
-    id = redisclient.set_id(name,
-                            json.dumps({'login': login, 'password': password}))
-    if not id:
+    response = redisclient.set_id(name, json.dumps({'login': login,
+                                                    'password': password}))
+    if not response:
         raise exceptions.HTTPException('Internal error while creating ' +
                                        'identity {}'
                                        .format(name),
@@ -42,13 +41,32 @@ def create_id(name: str, login: str, password: str) -> dict:
     return {'created': name}
 
 
-def update_id(name: str) -> dict:
-    raise exceptions.MethodNotAllowed()
+def update_id(name: str, login: http.QueryParam,
+              password: http.QueryParam) -> dict:
+    old_id = redisclient.get_id(name)
+    new_id = {}
+    if not old_id:
+        raise exceptions.NotFound()
+    if not (login or password):
+        raise exceptions.BadRequest()
+    if login:
+        new_id['login'] = login
+    if password:
+        new_id['password'] = password
+    new_id.setdefault('login', json.loads(old_id)['login'])
+    new_id.setdefault('password', json.loads(old_id)['password'])
+    response = redisclient.set_id(name, json.dumps(new_id))
+    if not response:
+        raise exceptions.HTTPException('Internal error while updating ' +
+                                       'identity {}'
+                                       .format(name),
+                                       500)
+    return json.loads(redisclient.get_id(name))
 
 
 def delete_id(name: str) -> dict:
-    value = redisclient.get_id(name)
-    if value is None:
+    response = redisclient.get_id(name)
+    if response is None:
         raise exceptions.NotFound()
     if not redisclient.delete_id(name):
         raise exceptions.HTTPException('Internal error while deleting ' +
