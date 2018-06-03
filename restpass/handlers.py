@@ -44,17 +44,15 @@ def create_id(name: str, login: str, password: str) -> dict:
 def update_id(name: str, login: http.QueryParam,
               password: http.QueryParam) -> dict:
     old_id = redisclient.get_id(name)
-    new_id = {}
     if not old_id:
         raise exceptions.NotFound()
+    new_id = json.loads(old_id)
     if not (login or password):
         raise exceptions.BadRequest()
     if login:
         new_id['login'] = login
     if password:
         new_id['password'] = password
-    new_id.setdefault('login', json.loads(old_id)['login'])
-    new_id.setdefault('password', json.loads(old_id)['password'])
     response = redisclient.set_id(name, json.dumps(new_id))
     if not response:
         raise exceptions.HTTPException('Internal error while updating ' +
