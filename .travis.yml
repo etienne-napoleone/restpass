@@ -1,0 +1,13 @@
+# TODO install flake 8 in dev deps, lock and commit
+language: python
+python:
+  - 3.6
+  - 3.5
+
+install:
+    - pip install pipenv
+    - pipenv install --dev
+
+script:
+    - flake8 .
+    - python -m pytest
