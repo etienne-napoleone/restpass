@@ -5,7 +5,7 @@ from restpass import redisclient
 
 client = test.TestClient(app)
 test_id = {'login': 'supermail@test.com', 'password': '12345'}
-password_slug = '?pw=password123'
+password_slug = '?p=password123'
 
 
 def test_get_ids_list():

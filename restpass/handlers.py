@@ -12,13 +12,13 @@ def welcome(name=None):
     return {'message': 'Welcome to restpass, {}!'.format(name)}
 
 
-def list_ids(pw: http.QueryParam) -> dict:
-    if not pw or not bcrypt.verify(pw, config.PASSWORD):
-        raise exceptions.Forbidden()
+def list_ids(p: http.QueryParam) -> dict:
+    _auth(p)
     return {'identities': redisclient.get_ids()}
 
 
-def get_id(name: str) -> dict:
+def get_id(p: http.QueryParam, name: str) -> dict:
+    _auth(p)
     response = redisclient.get_id(name)
     if response is None:
         raise exceptions.NotFound()
@@ -26,7 +26,9 @@ def get_id(name: str) -> dict:
         return json.loads(response)
 
 
-def create_id(name: str, login: str, password: str) -> dict:
+def create_id(p: http.QueryParam, name: str, login: str,
+              password: str) -> dict:
+    _auth(p)
     if redisclient.get_id(name):
         raise exceptions.HTTPException('The identity {} already exists'
                                        .format(name),
@@ -41,8 +43,9 @@ def create_id(name: str, login: str, password: str) -> dict:
     return {'created': name}
 
 
-def update_id(name: str, login: http.QueryParam,
+def update_id(p: http.QueryParam, name: str, login: http.QueryParam,
               password: http.QueryParam) -> dict:
+    _auth(p)
     old_id = redisclient.get_id(name)
     if not old_id:
         raise exceptions.NotFound()
@@ -62,7 +65,8 @@ def update_id(name: str, login: http.QueryParam,
     return json.loads(redisclient.get_id(name))
 
 
-def delete_id(name: str) -> dict:
+def delete_id(p: http.QueryParam, name: str) -> dict:
+    _auth(p)
     response = redisclient.get_id(name)
     if response is None:
         raise exceptions.NotFound()
@@ -72,3 +76,8 @@ def delete_id(name: str) -> dict:
                                        .format(name),
                                        500)
     return {'deleted': name}
+
+
+def _auth(password):
+    if not password or not bcrypt.verify(password, config.PASSWORD):
+        raise exceptions.Forbidden()
